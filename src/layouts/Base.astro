@@ -1,0 +1,33 @@
+---
+import "../styles/global.css";
+import "@fontsource/fira-code/latin-400.css";
+import "@fontsource/fira-code/latin-ext-400.css";
+import "@fontsource/fira-code/latin-600.css";
+import "@fontsource/fira-code/latin-ext-600.css";
+interface Props {
+	title: string;
+	description?: string;
+}
+const { title, description = "dev notes" } = Astro.props;
+const site = "Crashdump";
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="description" content={description} />
+		<meta name="generator" content={Astro.generator} />
+		<title>
+			{title === site ? title : `${title} / ${site}`}
+		</title>
+	</head>
+	<body>
+		<main>
+			<slot />
+		</main>
+	</body>
+</html>

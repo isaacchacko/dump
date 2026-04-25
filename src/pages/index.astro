@@ -1,0 +1,110 @@
+---
+import { Buffer } from "node:buffer";
+import { experimental_AstroContainer } from "astro/container";
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import Base from "../layouts/Base.astro";
+import {
+	buildDirRoot,
+	buildFolderPreviewMeta,
+	injectVirtualRecentFolder,
+	PINNED_HOME_POST_ID,
+	pinPostToTreeRoot,
+	serializeDir,
+	type FolderPreviewInfo,
+} from "../lib/tree";
+
+const all = await getCollection("blog", (e) => !e.data.draft);
+const sorted: CollectionEntry<"blog">[] = [...all].sort(
+	(a, b) => (b.data.date as Date).getTime() - (a.data.date as Date).getTime(),
+);
+const threeMostRecent = sorted.filter((e) => e.id !== PINNED_HOME_POST_ID).slice(0, 3);
+const root = buildDirRoot(all);
+pinPostToTreeRoot(root, PINNED_HOME_POST_ID);
+injectVirtualRecentFolder(root, threeMostRecent);
+const tree = serializeDir(root);
+const folderMeta: Record<string, FolderPreviewInfo> = buildFolderPreviewMeta(root);
+
+const container = await experimental_AstroContainer.create();
+const postHtml: Record<string, string> = {};
+for (const e of all) {
+	const { Content } = await render(e);
+	try {
+		postHtml[e.id] = await container.renderToString(Content);
+	} catch {
+		postHtml[e.id] = `<p class="preview-err">Could not render this dump.</p>`;
+	}
+}
+
+const base = (import.meta.env.BASE_URL as string) || "/";
+const payloadB64 = Buffer.from(
+	JSON.stringify({ base, root: tree, folderMeta, postHtml }),
+	"utf8"
+).toString("base64");
+
+const siteTitle = "Crashdump";
+---
+
+<Base title={siteTitle} description={"Offloading knowledge to disk"}>
+	<header>
+		<h1>
+			<span class="name italic">CRASHDUMP</span><span class="sub"></span>
+		</h1>
+	</header>
+
+	<section>
+		<div
+			id="browse"
+			class="browse"
+			data-b64={payloadB64}
+			role="application"
+			aria-label="Browse and preview dumps"
+		>
+			<div class="browse-col browse-col--preview" id="browse-panel-preview">
+				<div class="preview-shell" id="browse-preview">
+					<div class="preview-inner" id="browse-preview-inner"></div>
+				</div>
+			</div>
+			<div class="browse-col browse-col--tree" id="browse-tree-wrap">
+				<div id="browse-region" class="tree-shell">
+					<div class="tree-scroller" id="tree-scroller">
+						<div id="browse-title" class="visually-hidden" aria-live="polite" />
+						<ul id="browse-rows" data-tree-root role="group" class="tui-filetree" />
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+</Base>
+
+<script>
+	import { boot } from "../scripts/browse";
+	const b = document.getElementById("browse");
+	if (b?.dataset?.b64) boot(b, b.dataset.b64);
+</script>
+
+<style is:global>
+	.tree-hint {
+		margin: 0 0 0.75rem;
+		max-width: 40rem;
+		font-size: 0.8rem;
+		color: var(--dim);
+	}
+	#browse {
+		margin-top: 0.5rem;
+	}
+	#browse .visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		border: 0;
+	}
+	#browse .dim,
+	#browse kbd,
+	#browse .preview-err {
+		color: var(--dim);
+	}
+</style>

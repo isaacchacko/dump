@@ -1,0 +1,61 @@
+---
+import { getCollection, getEntry, render, type CollectionEntry } from "astro:content";
+import Base from "../layouts/Base.astro";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+	const posts = await getCollection("blog", (e) => !e.data.draft);
+	return posts.map((post) => ({ params: { slug: post.id } }));
+}
+
+const { slug } = Astro.params;
+const post = (await getEntry("blog", slug!)) as CollectionEntry<"blog"> | undefined;
+if (!post) {
+	throw new Error(`Missing post for id: ${slug}`);
+}
+const { Content } = await render(post);
+const desc = post.data.description || post.data.title;
+const home = (import.meta.env.BASE_URL as string) || "/";
+const posted = post.data.date as Date;
+const iso = posted.toISOString().slice(0, 10);
+---
+
+<Base title={post.data.title} description={desc}>
+	<nav class="back">
+		<a href={home} class="back-link">← all dumps</a>
+	</nav>
+	<article>
+		<h1>{post.data.title}</h1>
+		<p class="meta">{iso}</p>
+		<Content />
+	</article>
+	<footer>crashdump / <span class="dim">{post.id}.md</span></footer>
+</Base>
+<script define:vars={{ home }}>
+	// No TS-only syntax here — this ships as raw JS in the page.
+	function escTargetOk(t) {
+		if (!t || !(t instanceof Element)) return true;
+		if (t.isContentEditable) return false;
+		if (t.closest("input, textarea, select")) return false;
+		return true;
+	}
+	function onKey(e) {
+		const goHome = e.key === "Escape" || e.key === "h" || e.key === "H";
+		if (!goHome) return;
+		if (!escTargetOk(e.target)) return;
+		e.preventDefault();
+		const b = !home || home === "" ? "/" : home;
+		window.location.assign(b);
+	}
+	window.addEventListener("keydown", onKey, true);
+</script>
+
+<style>
+	.back {
+		margin-bottom: 1.5rem;
+	}
+	.back-link {
+		color: var(--dim);
+	}
+</style>
