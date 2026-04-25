@@ -30,7 +30,7 @@ const iso = posted.toISOString().slice(0, 10);
 		<p class="meta">{iso}</p>
 		<Content />
 	</article>
-	<footer>dump / <span class="dim">{post.id}.md</span></footer>
+	<footer><span class="dim">{post.id}.md</span></footer>
 </Base>
 <script define:vars={{ home }}>
 	// No TS-only syntax here — this ships as raw JS in the page.
