@@ -1,4 +1,4 @@
-# Crashdump
+# dump
 
 A minimal dev blog: Markdown in `src/content/blog/`, static Astro build, and a home page with **recent dumps** plus a **file tree** (keyboard: `j` / `k`, `l` to open, `h` to go up or collapse a folder). `Escape` on a post returns to the list.
 

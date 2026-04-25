@@ -4,7 +4,7 @@ date: 2026-04-24
 description: "Home for things learned along the way."
 ---
 
-**Howdy!** Read some of my crash dumps below. Vim-motion friendly!
+**Howdy!** Read some of my dumps below. Vim-motion friendly!
 
 - `j/k` to scroll up or down
 - `l/Return` to view files
